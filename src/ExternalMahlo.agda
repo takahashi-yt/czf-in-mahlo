@@ -14,7 +14,7 @@ open import Preliminaries
    Mahlo universe was introduced by Setzer [1], and this file formalises an external variant of Mahlo universe
    which was introduced by Dybjer and Setzer [2]
 
-   the sort Set is considered as the external Mahlo universe in Russell universe-style, so it does not have any decoding function
+   the sort Set is considered as the external Mahlo universe in Russell universe-style, so it has no decoding function
 
    the fundamental property of Set as the external Mahlo universe is that for any function f on families of sets,
    there is a subuniverse 𝕌 which is closed under f
@@ -68,7 +68,7 @@ data 𝕌 f where
    
    𝔽 n is the type of families of n-order operators
 
-   These notions are defined by Palmgren [3]
+   These notions were defined by Palmgren [3]
 
    [3] Erik Palmgren. On universes in type theory. In Giovanni Sambin and Jan M. Smith, editors,
        Twenty Five Years of Constructive Type Theory, Oxford Logic Guides, pages 191--204.
@@ -88,7 +88,7 @@ interleaved mutual
 
 {-
    the operator u𝕄 provides a subuniverse closed under all first-order operators
-   in a given family of first-order operator (A , f)  (cf. the cases (i) and (ii))
+   in a given family of first-order operators (A , f)  (cf. the cases (i) and (ii))
 -}
 
 u𝕄 : 𝔽 1 → 𝕆 1
