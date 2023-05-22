@@ -1,2 +1,2 @@
 # czf-in-mahlo
-A formalization of Aczel's constructive set theory CZF in Agda with a Mahlo universe
+This repository formalizes Aczel's constructive set theory CZF in Martin-Löf type theory with a Mahlo universe by using Agda
