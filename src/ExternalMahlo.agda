@@ -1,3 +1,4 @@
+{-# OPTIONS --cubical-compatible --safe #-}
 
 module ExternalMahlo where
 
@@ -14,7 +15,7 @@ open import Preliminaries
    Mahlo universe was introduced by Setzer [1], and this file formalises an external variant of Mahlo universe
    which was introduced by Dybjer and Setzer [2]
 
-   the sort Set is considered as the external Mahlo universe in Russell universe-style, so it has no decoding function
+   the sort Set is considered as the external Mahlo universe in Russell universe-style, so it does not have any decoding function
 
    the fundamental property of Set as the external Mahlo universe is that for any function f on families of sets,
    there is a subuniverse 𝕌 which is closed under f
@@ -68,7 +69,7 @@ data 𝕌 f where
    
    𝔽 n is the type of families of n-order operators
 
-   These notions were defined by Palmgren [3]
+   These notions are defined by Palmgren [3]
 
    [3] Erik Palmgren. On universes in type theory. In Giovanni Sambin and Jan M. Smith, editors,
        Twenty Five Years of Constructive Type Theory, Oxford Logic Guides, pages 191--204.
@@ -88,23 +89,23 @@ interleaved mutual
 
 {-
    the operator u𝕄 provides a subuniverse closed under all first-order operators
-   in a given family of first-order operators (A , f)  (cf. the cases (i) and (ii))
+   in a given family of first-order operator (A , f)  (cf. the cases (i) and (ii))
 -}
+
+h𝕄 : (C : 𝔽 1) → (D : 𝔽 0) → (c : 𝔽 0) → ((⊤ ⊕ fst D) ⊕ fst C) ⊕ (Σ (fst C) (λ e → fst (snd C e c))) → Set
+h𝕄 C D c (injl (injl (injl x₁))) = fst D
+h𝕄 C D c (injl (injl (injr x₂))) = snd D x₂
+h𝕄 C D c (injl (injr e)) = fst (snd C e c)   -- (i)
+h𝕄 C D c (injr (e , y)) = snd (snd C e c) y  -- (ii)
 
 u𝕄 : 𝔽 1 → 𝕆 1
 u𝕄 (A , f) (B , g) = Uni¹₀
   where
-  famSets : (c : 𝔽 0) → ((⊤ ⊕ B) ⊕ A) ⊕ (Σ A (λ e → fst (f e c))) → Set
-  famSets c (injl (injl (injl x₁))) = B
-  famSets c (injl (injl (injr x₂))) = g x₂
-  famSets c (injl (injr e)) = fst (f e c)    -- (i)
-  famSets c (injr (e , y)) = snd (f e c) y   -- (ii)
-
   uni¹₀ : Set
-  uni¹₀ = 𝕌 (λ c → ((⊤ ⊕ B) ⊕ A) ⊕ (Σ A (λ e → fst (f e c))) , famSets c)
+  uni¹₀ = 𝕌 (λ c → ((⊤ ⊕ B) ⊕ A) ⊕ (Σ A (λ e → fst (f e c))) , h𝕄 (A , f) (B , g) c)
 
   dec¹₀ : uni¹₀ → Set
-  dec¹₀ = 𝕋 (λ c → ((⊤ ⊕ B) ⊕ A) ⊕ (Σ A (λ e → fst (f e c))) , famSets c)
+  dec¹₀ = 𝕋 (λ c → ((⊤ ⊕ B) ⊕ A) ⊕ (Σ A (λ e → fst (f e c))) , h𝕄 (A , f) (B , g) c)
 
   Uni¹₀ : 𝔽 0
   Uni¹₀ = uni¹₀ , dec¹₀

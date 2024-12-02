@@ -1,3 +1,5 @@
+{-# OPTIONS --cubical-compatible --safe #-}
+
 module CZFBasics where
 
 open import Agda.Primitive
@@ -36,12 +38,8 @@ open import Preliminaries
 ∃𝕧∈ : {ℓ : Level} → 𝕍 → (𝕍 → Set ℓ) → Set ℓ
 ∃𝕧∈ a B = Σ (index a) (λ x → B (pred a x))
 
--- the transfinite induction principle for 𝕍
 
-tind𝕍 : (F : 𝕍 → Set₁) → (∀ (a : 𝕍) → (∀𝕧∈ a F → F a)) → ∀ (a : 𝕍) → F a
-tind𝕍 F c = Welim F (λ A b w → c (sup A b) w)
-
--- a generalisation of tind𝕍
+-- a transfinite induction principle on 𝕍 which is weaker than ∈-TI below
 
 ∈-wTI : {ℓ : Level} {F : 𝕍 → Set ℓ} →
          (∀ (a : 𝕍) → (∀𝕧∈ a F → F a)) → ∀ (a : 𝕍) → F a
@@ -97,6 +95,31 @@ ip-compat {sup A f} {sup B g} p x = fst (fst p x) , snd (fst p x)
 ≐trans (sup A f) (sup B g) (sup C h) (c₁ , c₂) (d₁ , d₂) =
   (λ x → fst (d₁ (fst (c₁ x))) , ≐trans (f x) (g (fst (c₁ x))) (h (fst (d₁ (fst (c₁ x))))) (snd (c₁ x)) (snd (d₁ (fst (c₁ x))))) ,
     (λ z → fst (c₂ (fst (d₂ z))) , ≐trans (f (fst (c₂ (fst (d₂ z))))) (g (fst (d₂ z))) (h z) (snd (c₂ (fst (d₂ z)))) (snd (d₂ z)))
+
+≐cong : {A : Set} {f g : A → 𝕍} → ((a : A) → f a ≐ g a) → sup A f ≐ sup A g
+≐cong {A} {f} {g} p = (λ x → x , p x) , (λ y → y , p y)
+
+-- "eta-equality" for _≐_
+
+≐eta : (a : 𝕍) → a ≐ sup (index a) (pred a)
+≐eta (sup A f) = (λ x → x , ≐refl (f x)) , (λ x → x , ≐refl (f x))
+
+≐bisim : {v w : 𝕍} → v ≐ w →
+            (∀𝕧∈ v λ x → ∃𝕧∈ w λ y → x ≐ y) × (∀𝕧∈ w λ y → ∃𝕧∈ v λ x → x ≐ y)
+≐bisim {v = sup A f} {w = sup B g} p =
+  (λ x → fst (fst p x) , snd (fst p x)) , λ y → fst (snd p y) , snd (snd p y)
+
+-- a useful lemma relating ≡ and ≐
+
+≡-≐ : {A B : Set} → (g : B → 𝕍) → (p : A ≡ B)
+        → sup A (λ x → g (transp (λ X → X) p x)) ≐ sup B g
+≡-≐ {A} {.A} g refl = ≐refl (sup A g)
+
+-- a similar lemma not mentioning ≐
+
+≡-≡ : {A B : Set} → (g : B → 𝕍) → (p : A ≡ B)
+        → sup A (λ x → g (transp (λ X → X) p x)) ≡ sup B g
+≡-≡ {A} {.A} g refl = refl
 
 
 -- the membership relation on 𝕍
@@ -215,20 +238,3 @@ ExtEx {F = F} prf (sup A f) = (λ (x , y) → f x , (x , ≐refl (f x)) , y) ,
       ∈-TI-lem₄ : F' (f (fst b-in-a))
       ∈-TI-lem₄ = ∈-TI ∈-TI-lem₁ ∈-TI-lem₂ (f (fst b-in-a)) ∈-TI-lem₃
   in F-ext (f (fst b-in-a)) (∈-TI-lem₄ (fst b-in-a , ≐refl (f (fst b-in-a)))) b (snd b-in-a)
-
-
--- the relativisation of transfinite induction
-
-_⊧SetInd : 𝕍 → Set₁
-c ⊧SetInd = {F : 𝕍 → Set} → isInv F → (∀𝕧∈ c λ a → (∀𝕧∈ a λ v → F v) → F a) → ∀𝕧∈ c λ a → F a
-
-
--- _⊧SetInd is invariant
-
-⊧SetIndInv : isInv (λ v → v ⊧SetInd)
-⊧SetIndInv {sup A f} {sup B g} p c {F} F-is-inv e y = F-is-inv (snd (snd p y))
-  (c F-is-inv (λ x e' → ⊧SetIndInv-lem x e') (fst (snd p y)))
-  where
-  ⊧SetIndInv-lem : ∀𝕧∈ (sup A f) (λ a → ∀𝕧∈ a F → F a)
-  ⊧SetIndInv-lem z u = F-is-inv (≐sym (f z) (g (fst (fst p z))) (snd (fst p z)))
-    (e (fst (fst p z)) (∀𝕧∈-Inv F-is-inv (snd (fst p z)) u))

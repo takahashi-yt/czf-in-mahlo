@@ -1,3 +1,5 @@
+{-# OPTIONS --cubical-compatible --safe #-}
+
 module CZFAxioms where
 
 open import Agda.Primitive
@@ -31,7 +33,45 @@ open import CZFBasics
 -}
 
 
--- Pairing Axiom and some notions and lemmas concerning the axiom
+-- Extensionality Axioms
+
+ExtAx1 : {a b x : 𝕍} → a ≐ b → a ∈ x → b ∈ x
+ExtAx1 {a}{b}{x} = ≐transp {a}{b}{x}
+
+ExtAx2 : {a b : 𝕍} → a ≐ b → (x : 𝕍) → (x ∈ a ↔ x ∈ b)
+ExtAx2 = ≐ext
+
+ExtAx2' : {a b : 𝕍} → ((x : 𝕍) → (x ∈ a ↔ x ∈ b)) → a ≐ b
+ExtAx2' = ≐ext'
+
+_⊧ExtAx : 𝕍 → Set
+c ⊧ExtAx = (∀𝕧∈ c λ a → ∀𝕧∈ c λ b → ∀𝕧∈ c λ x → a ≐ b → a ∈ x → b ∈ x) ×
+           (∀𝕧∈ c λ a → ∀𝕧∈ c λ b → a ≐ b → ∀𝕧∈ c λ x → (x ∈ a ↔ x ∈ b)) ×
+           ∀𝕧∈ c λ a → ∀𝕧∈ c λ b → (∀𝕧∈ c λ x → (x ∈ a ↔ x ∈ b)) → a ≐ b
+
+
+-- Set Induction Axiom as ∈-wTI
+
+SetInd : {ℓ : Level} {F : 𝕍 → Set ℓ} → ((a : 𝕍) → ∀𝕧∈ a F → F a) → (a : 𝕍) → F a
+SetInd = ∈-wTI
+
+-- the relativisation of transfinite induction
+
+_⊧SetInd : 𝕍 → Set₁
+c ⊧SetInd = {F : 𝕍 → Set} → isInv F → (∀𝕧∈ c λ a → (∀𝕧∈ a λ v → F v) → F a) → ∀𝕧∈ c λ a → F a
+
+-- _⊧SetInd is invariant
+
+⊧SetIndInv : isInv (λ v → v ⊧SetInd)
+⊧SetIndInv {sup A f} {sup B g} p c {F} F-is-inv e y = F-is-inv (snd (snd p y))
+  (c F-is-inv (λ x e' → ⊧SetIndInv-lem x e') (fst (snd p y)))
+  where
+  ⊧SetIndInv-lem : ∀𝕧∈ (sup A f) (λ a → ∀𝕧∈ a F → F a)
+  ⊧SetIndInv-lem z u = F-is-inv (≐sym (f z) (g (fst (fst p z))) (snd (fst p z)))
+    (e (fst (fst p z)) (∀𝕧∈-Inv F-is-inv (snd (fst p z)) u))
+
+
+-- Pairing Axiom with some notions and lemmas concerning the axiom
 
 Pairs : (a b : 𝕍) → Σ 𝕍 (λ c → (x : 𝕍) → x ∈ c ↔ ((x ≐ a) ⊕ (x ≐ b)))
 Pairs a b = sup Bool pair , λ x → (λ (z , e) → pair-prf₁ x z e) , pair-prf₂ x
@@ -86,12 +126,11 @@ pair-compat₂ {a}{b} p c = ≐ext' λ v → (λ d → lem₁-pair-compat₂ v (
   lem₂-pair-compat₂ v (injl q) = snd (pair-set-proof c a v) (injl q)
   lem₂-pair-compat₂ v (injr r) = snd (pair-set-proof c a v) (injr (≐trans v b a r (≐sym a b p)))
 
-_⊧Pairs : 𝕍 → Set₁
-w ⊧Pairs = ∀𝕧∈ w λ a → ∀𝕧∈ w λ b → ∃𝕧∈ w λ c → (x : 𝕍) → x ∈ c ↔ ((x ≐ a) ⊕ (x ≐ b))
+_⊧Pairs : 𝕍 → Set
+w ⊧Pairs = ∀𝕧∈ w λ a → ∀𝕧∈ w λ b → ∃𝕧∈ w λ c → ∀𝕧∈ w λ x → x ∈ c ↔ ((x ≐ a) ⊕ (x ≐ b))
 
 inv-Pairs : isInv λ v → v ⊧Pairs
-inv-Pairs {v}{w} p e x y = fst In-w ,
-  λ z → lem₁ z , lem₂ z
+inv-Pairs {v}{w} p e x y = fst In-w , λ z → lem₁ z , lem₂ z
   where
   x' : index v
   x' = fst (snd (≐ext p (pred w x)) (x , ≐refl (pred w x)))
@@ -105,7 +144,7 @@ inv-Pairs {v}{w} p e x y = fst In-w ,
   yy' : pred w y ≐ pred v y'
   yy' = snd (snd (≐ext p (pred w y)) (y , ≐refl (pred w y)))
 
-  pair-in-v : ∃𝕧∈ v (λ c → (z : 𝕍) → (z ∈ c) ↔ ((z ≐ pred v x') ⊕ (z ≐ pred v y')))
+  pair-in-v : ∃𝕧∈ v λ c → ∀𝕧∈ v λ z → (z ∈ c) ↔ ((z ≐ pred v x') ⊕ (z ≐ pred v y'))
   pair-in-v = e x' y'
 
   In-w : pred v (fst pair-in-v) ∈ w
@@ -114,19 +153,74 @@ inv-Pairs {v}{w} p e x y = fst In-w ,
   inw≐inv : pred w (fst In-w) ≐ pred v (fst pair-in-v)
   inw≐inv = ≐sym (pred v (fst pair-in-v)) (pred w (fst In-w)) (snd In-w)
 
-  lem₁ : (z : 𝕍) → z ∈ pred w (fst In-w) → (z ≐ pred w x) ⊕ (z ≐ pred w y)
-  lem₁ z d = ⊕elim (λ _ → (z ≐ pred w x) ⊕ (z ≐ pred w y))
-    (λ c → injl (≐trans z (pred v x') (pred w x) c (≐sym (pred w x) (pred v x') xx')))
-      (λ c → injr (≐trans z (pred v y') (pred w y) c (≐sym (pred w y) (pred v y') yy')))
-        (fst (snd pair-in-v z) (fst (≐ext inw≐inv z) d))
+  lem₁ : ∀𝕧∈ w λ z → z ∈ pred w (fst In-w) → (z ≐ pred w x) ⊕ (z ≐ pred w y)
+  lem₁ z d = ⊕elim (λ _ → (pred w z ≐ pred w x) ⊕ (pred w z ≐ pred w y))
+                   (λ q₁ → injl (≐trans (pred w z)
+                                       (pred v x')
+                                       (pred w x)
+                                       (≐trans (pred w z)
+                                               (pred v (fst (ip-compat (≐sym v w p) z)))
+                                               (pred v x')
+                                               (snd (ip-compat (≐sym v w p) z))
+                                               q₁)
+                                       (≐sym (pred w x) (pred v x') xx')))
+                   (λ q₂ → injr (≐trans (pred w z)
+                                       (pred v y')
+                                       (pred w y)
+                                       (≐trans (pred w z)
+                                               (pred v (fst (ip-compat (≐sym v w p) z)))
+                                               (pred v y')
+                                               ((snd (ip-compat (≐sym v w p) z)))
+                                               q₂)
+                                       (≐sym (pred w y) (pred v y') yy')))
+                   (fst (snd pair-in-v (fst (ip-compat (≐sym v w p) z)))
+                        (fst (fst (≐ext inw≐inv (pred w z)) d) ,
+                        ≐trans (pred v (fst (ip-compat (≐sym v w p) z)))
+                               (pred w z)
+                               (pred (pred v (fst pair-in-v))
+                                     (fst (fst (≐ext inw≐inv (pred w z)) d)))
+                               (≐sym (pred w z)
+                                     (pred v (fst (ip-compat (≐sym v w p) z)))
+                                     (snd (ip-compat (≐sym v w p) z)))
+                               (snd (fst (≐ext inw≐inv (pred w z)) d))))
 
-  lem₂ : (z : 𝕍) → (z ≐ pred w x) ⊕ (z ≐ pred w y) → z ∈ pred w (fst In-w)
-  lem₂ z (injl d₁) = fst (≐ext (snd In-w) z)
-    (snd (snd pair-in-v z) (injl (≐trans z (pred w x) (pred v x') d₁ xx')))
-  lem₂ z (injr d₂) = fst (≐ext (snd In-w) z)
-    (snd (snd pair-in-v z) (injr (≐trans z (pred w y) (pred v y') d₂ yy')))
+  lem₂ : ∀𝕧∈ w λ z → (z ≐ pred w x) ⊕ (z ≐ pred w y) → z ∈ pred w (fst In-w)
+  lem₂ z (injl q₁) = let sublem : pred v (fst (ip-compat (≐sym v w p) z)) ∈ pred w (fst In-w)
+                         sublem = fst (≐ext (≐sym (pred w (fst In-w)) (pred v (fst pair-in-v)) inw≐inv)
+                                            (pred v (fst (ip-compat (≐sym v w p) z))))
+                                        (snd (snd pair-in-v (fst (ip-compat (≐sym v w p) z)))
+                                               (injl (≐trans (pred v (fst (ip-compat (≐sym v w p) z)))
+                                                             (pred w z)
+                                                             (pred v x')
+                                                             (≐sym (pred w z)
+                                                                   (pred v (fst (ip-compat (≐sym v w p) z)))
+                                                                   (snd (ip-compat (≐sym v w p) z)))
+                                                             (≐trans (pred w z) (pred w x) (pred v x') q₁ xx'))))
+                     in fst sublem ,
+                        ≐trans (pred w z)
+                                (pred v (fst (ip-compat (≐sym v w p) z)))
+                                (pred (pred w (fst In-w)) (fst sublem))
+                                (snd (ip-compat (≐sym v w p) z))
+                                (snd sublem)
+  lem₂ z (injr q₂) = let sublem : pred v (fst (ip-compat (≐sym v w p) z)) ∈ pred w (fst In-w)
+                         sublem = fst (≐ext (≐sym (pred w (fst In-w)) (pred v (fst pair-in-v)) inw≐inv)
+                                            (pred v (fst (ip-compat (≐sym v w p) z))))
+                                        (snd (snd pair-in-v (fst (ip-compat (≐sym v w p) z)))
+                                               (injr (≐trans (pred v (fst (ip-compat (≐sym v w p) z)))
+                                                             (pred w z)
+                                                             (pred v y')
+                                                             (≐sym (pred w z)
+                                                                   (pred v (fst (ip-compat (≐sym v w p) z)))
+                                                                   (snd (ip-compat (≐sym v w p) z)))
+                                                             (≐trans (pred w z) (pred w y) (pred v y') q₂ yy'))))
+                      in fst sublem ,
+                         ≐trans (pred w z)
+                                (pred v (fst (ip-compat (≐sym v w p) z)))
+                                (pred (pred w (fst In-w)) (fst sublem))
+                                (snd (ip-compat (≐sym v w p) z))
+                                (snd sublem)
 
--- sglt a corresponds to {a}
+-- sglt a corresponds to { a }
 
 sglt : 𝕍 → 𝕍
 sglt a = sup ⊤ λ _ → a
@@ -223,11 +317,19 @@ OPairAx {a}{b}{v}{w} = (λ p → lemOPairAx₃ p , lemOPairAx₆ p) , lemOPairAx
 _×𝕍_ : 𝕍 → 𝕍 → 𝕍
 a ×𝕍 b = sup (index a × index b) (λ x → ⟨ pred a (fst x) , pred b (snd x) ⟩)
 
+infixl 20 _×𝕍_
+
 ×𝕍₁ : {a b x : 𝕍} → x ∈ (a ×𝕍 b) → ∃𝕧∈ a λ v → ∃𝕧∈ b λ w → x ≐ ⟨ v , w ⟩
 ×𝕍₁ {a}{b}{x} d = fst (fst d) , snd (fst d) , snd d
 
+proj₁ : {a b x : 𝕍} → x ∈ (a ×𝕍 b) → 𝕍
+proj₁ {a} {b} x-is-pair = pred a (fst (×𝕍₁ {a} {b} x-is-pair))
 
--- Union Axiom and some notions and lemmas concerning the axiom
+proj₂ : {a b x : 𝕍} → x ∈ (a ×𝕍 b) → 𝕍
+proj₂ {a} {b} x-is-pair = pred b (fst (snd ((×𝕍₁ {a} {b} x-is-pair))))
+
+
+-- Union Axiom with some notions and lemmas concerning the axiom
 
 Union : (a : 𝕍) → Σ 𝕍 (λ c → (x : 𝕍) → x ∈ c ↔ ∃𝕧∈ a (λ v → x ∈ v))
 Union (sup A f) = sup (Σ A (λ y → index (f y))) (λ (w₁ , w₂) → pred (f w₁) w₂) ,
@@ -244,8 +346,16 @@ Union (sup A f) = sup (Σ A (λ y → index (f y))) (λ (w₁ , w₂) → pred (
 ∪-index : (a : 𝕍) → index (∪ a) ≡ Σ (index a) λ x → index (pred a x)
 ∪-index (sup A f) = refl
 
-_⊧Union : 𝕍 → Set₁
-w ⊧Union = ∀𝕧∈ w λ a → ∃𝕧∈ w λ c → (x : 𝕍) → x ∈ c ↔ ∃𝕧∈ a (λ v → x ∈ v)
+∪-cong : {a b : 𝕍} → a ≐ b → ∪ a ≐ ∪ b
+∪-cong {a} {b} p = ExtAx2' λ x → (λ d → snd (∪-proof b x) (fst (fst (≐bisim p) (fst (fst (∪-proof a x) d))) ,
+                                                           fst (ExtAx2 (snd (fst (≐bisim p) (fst (fst (∪-proof a x) d)))) x)
+                                                                 (snd (fst (∪-proof a x) d)))) ,
+                                 (λ e → snd (∪-proof a x) (fst (snd (≐bisim p) (fst (fst (∪-proof b x) e))) ,
+                                                           snd (ExtAx2 (snd (snd (≐bisim p) (fst (fst (∪-proof b x) e)))) x)
+                                                                 (snd (fst (∪-proof b x) e))))
+
+_⊧Union : 𝕍 → Set
+w ⊧Union = ∀𝕧∈ w λ a → ∃𝕧∈ w λ c → ∀𝕧∈ w λ x → x ∈ c ↔ ∃𝕧∈ a (λ v → x ∈ v)
 
 inv-Union : isInv λ v → v ⊧Union
 inv-Union {v}{w} p e x = fst In-w , λ z → lem₁ z , lem₂ z
@@ -256,7 +366,7 @@ inv-Union {v}{w} p e x = fst In-w , λ z → lem₁ z , lem₂ z
   xx' : pred w x ≐ pred v x'
   xx' = snd (snd (≐ext p (pred w x)) (x , ≐refl (pred w x)))
 
-  uni-in-v : ∃𝕧∈ v λ c → (z : 𝕍) → z ∈ c ↔ ∃𝕧∈ (pred v x') (λ v' → z ∈ v')
+  uni-in-v : ∃𝕧∈ v λ c → ∀𝕧∈ v λ z → z ∈ c ↔ ∃𝕧∈ (pred v x') (λ v' → z ∈ v')
   uni-in-v = e x'
 
   In-w : pred v (fst uni-in-v) ∈ w
@@ -265,25 +375,69 @@ inv-Union {v}{w} p e x = fst In-w , λ z → lem₁ z , lem₂ z
   inw≐inv : pred w (fst In-w) ≐ pred v (fst uni-in-v)
   inw≐inv = ≐sym (pred v (fst uni-in-v)) (pred w (fst In-w)) (snd In-w)
 
-  lem₁ : (z : 𝕍) → z ∈ pred w (fst In-w) → ∃𝕧∈ (pred w x) (λ w' → z ∈ w')
-  lem₁ z d = fst sublem₁ ,
-    fst (≐ext (snd sublem₁) z) (snd (fst (snd uni-in-v z) (fst (≐ext inw≐inv z) d)))
-    where
-    idx : index (pred v x')
-    idx = fst (fst (snd uni-in-v z) (fst (≐ext inw≐inv z) d))
+  lem₁ : ∀𝕧∈ w λ z → z ∈ pred w (fst In-w) → ∃𝕧∈ (pred w x) (λ w' → z ∈ w')
+  lem₁ z d = let sublem₁ : ∃𝕧∈ (pred v x') λ a →
+                            pred v (fst (snd (≐ext p (pred w z)) (z , ≐refl (pred w z)))) ∈ a
+                 sublem₁ = fst (snd uni-in-v (fst (snd (≐ext p (pred w z)) (z , ≐refl (pred w z)))))
+                              (≐transp {pred w z}
+                                       {pred v (fst (snd (≐ext p (pred w z)) (z , ≐refl (pred w z))))}
+                                       {pred v (fst uni-in-v)}
+                                       (snd (snd (≐ext p (pred w z)) (z , ≐refl (pred w z))))
+                                       (fst (≐ext inw≐inv (pred w z)) d))
 
-    sublem₁ : pred (pred v x') idx ∈ pred w x
-    sublem₁ = fst (≐ext (≐sym (pred w x) (pred v x') xx') (pred (pred v x') idx))
-      (idx , ≐refl (pred (pred v x') idx))
+                 sublem₂ : pred (pred v x') (fst sublem₁) ∈ pred w x
+                 sublem₂ = snd (≐ext  xx' (pred (pred v x') (fst sublem₁)))
+                               (fst sublem₁ , ≐refl (pred (pred v x') (fst sublem₁)))
+             in fst sublem₂ , ≐transp {pred v (fst (snd (≐ext p (pred w z)) (z , ≐refl (pred w z))))}
+                                      {pred w z}
+                                      {pred (pred w x) (fst sublem₂)}
+                                      (≐sym (pred w z)
+                                            (pred v (fst (snd (≐ext p (pred w z)) (z , ≐refl (pred w z)))))
+                                            (snd (snd (≐ext p (pred w z)) (z , ≐refl (pred w z)))))
+                                      (fst (≐ext (snd sublem₂)
+                                                 (pred v (fst (snd (≐ext p (pred w z)) (z , ≐refl (pred w z))))))
+                                             (snd sublem₁))
 
-  lem₂ : (z : 𝕍) → ∃𝕧∈ (pred w x) (λ w' → z ∈ w') → z ∈ pred w (fst In-w)
-  lem₂ z (u , d) = fst (≐ext (≐sym (pred w (fst In-w)) (pred v (fst uni-in-v)) inw≐inv) z) sublem₃
-    where
-    sublem₂ : pred (pred w x) u ∈ pred v x'
-    sublem₂ = fst (≐ext xx' (pred (pred w x) u)) (u , ≐refl (pred (pred w x) u))
+  lem₂ : ∀𝕧∈ w λ z → ∃𝕧∈ (pred w x) (λ w' → z ∈ w') → z ∈ pred w (fst In-w)
+  lem₂ z (y , d) = let sublem₁ : pred (pred w x) y ∈ pred v x'
+                       sublem₁ = fst (≐ext xx' (pred (pred w x) y)) (y , ≐refl (pred (pred w x) y))
 
-    sublem₃ : z ∈ pred v (fst uni-in-v)
-    sublem₃ = snd (snd uni-in-v z) (fst sublem₂ , fst (≐ext (snd sublem₂) z) d)
+                       sublem₂ : pred w z ∈ pred v (fst uni-in-v)
+                       sublem₂ = ≐transp {pred v (fst (snd (≐ext p (pred w z)) (z , ≐refl (pred w z))))}
+                                         {pred w z}
+                                         {pred v (fst uni-in-v)}
+                                         (≐sym (pred w z)
+                                               (pred v (fst (snd (≐ext p (pred w z)) (z , ≐refl (pred w z)))))
+                                               (snd (snd (≐ext p (pred w z)) (z , ≐refl (pred w z)))))
+                                         (snd (snd uni-in-v (fst (snd (≐ext p (pred w z)) (z , ≐refl (pred w z)))))
+                                           (fst sublem₁ ,
+                                           ≐transp {pred w z}
+                                                    {pred v (fst (snd (≐ext p (pred w z)) (z , ≐refl (pred w z))))}
+                                                    {pred (pred v x') (fst sublem₁)}
+                                                    (snd (snd (≐ext p (pred w z)) (z , ≐refl (pred w z))))
+                                                    (fst (≐ext (snd sublem₁) (pred w z)) d)))
+                   in snd (≐ext inw≐inv (pred w z)) sublem₂
+
+proj∪₁ : {a b R : 𝕍} → ⟨ a , b ⟩ ∈ R → a ∈ ∪ (∪ R)
+proj∪₁ {a}{b}{R} x = snd (∪-proof (∪ R) a) (fst lem₃ , fst (≐ext (snd lem₃) a) lem₂)
+  where
+  lem₁ : sglt a ∈ ⟨ a , b ⟩
+  lem₁ = pair-set-fst (sglt a) (pair-set a b)
+
+  lem₂ : a ∈ sglt a
+  lem₂ = record {} , ≐refl a
+
+  lem₃ : sglt a ∈ ∪ R
+  lem₃ = snd (∪-proof R (sglt a)) (fst x , fst (≐ext (snd x) (sglt a)) lem₁)
+
+proj∪₂ : {a b R : 𝕍} → ⟨ a , b ⟩ ∈ R → b ∈ ∪ (∪ R)
+proj∪₂ {a}{b}{R} x = snd (∪-proof (∪ R) b) (fst lem₂ , fst (≐ext (snd lem₂) b) (pair-set-snd a b))
+  where
+  lem₁ : pair-set a b ∈ ⟨ a , b ⟩
+  lem₁ = pair-set-snd (sglt a) (pair-set a b)
+
+  lem₂ : pair-set a b ∈ ∪ R
+  lem₂ = snd (∪-proof R (pair-set a b)) (fst x , fst (≐ext (snd x) (pair-set a b)) lem₁)
 
 
 -- Binary Union Axiom
@@ -317,8 +471,16 @@ infix 25 _∪b_
 ∪b-index : (a b : 𝕍) → index (a ∪b b) ≡ index a ⊕ index b
 ∪b-index (sup A f) (sup B g) = refl
 
+∪b-cong : {a b v w : 𝕍} → a ≐ b → v ≐ w → a ∪b v ≐ b ∪b w
+∪b-cong {a} {b} {v} {w} p q = ExtAx2' λ x → (λ d → snd (∪b-proof b w x) (fst (lem x) (fst (∪b-proof a v x) d))) ,
+                                            (λ e → snd (∪b-proof a v x) (snd (lem x) (fst (∪b-proof b w x) e)))
+  where
+  lem : (x : 𝕍) → (x ∈ a ⊕ x ∈ v) ↔ (x ∈ b ⊕ x ∈ w)
+  lem x = (λ { (injl d₁) → injl (fst (ExtAx2 p x) d₁) ; (injr d₂) → injr (fst (ExtAx2 q x) d₂) }) ,
+          (λ { (injl d₁) → injl (snd (ExtAx2 p x) d₁) ; (injr d₂) → injr (snd (ExtAx2 q x) d₂) })
 
--- Separation Axiom and the notions and lemmas concerning the axiom
+
+-- Separation Axiom with the notions and lemmas concerning the axiom
 
 SepAx : (F : 𝕍 → Set) → (a : 𝕍) →
   Σ 𝕍 λ b → (x : 𝕍) → x ∈ b ↔ ∃𝕧∈ a (λ v → (F v) × (x ≐ v))
@@ -343,7 +505,7 @@ SepAx' F F-is-inv (sup A f) = sup (Σ A λ x → F (f x)) (λ c → f (fst c)) ,
 
 _⊧Sep : 𝕍 → Set₁
 w ⊧Sep = (F : 𝕍 → Set) → (isInv F) → ∀𝕧∈ w λ a →
-  ∃𝕧∈ w λ b → (x : 𝕍) → x ∈ b ↔ (x ∈ a × F x)
+  ∃𝕧∈ w λ b → ∀𝕧∈ w λ x → x ∈ b ↔ (x ∈ a × F x)
 
 inv-Sep : isInv λ v → v ⊧Sep
 inv-Sep {v}{w} p e F F-inv x = fst In-w , λ z → lem₁ z , lem₂ z
@@ -354,7 +516,7 @@ inv-Sep {v}{w} p e F F-inv x = fst In-w , λ z → lem₁ z , lem₂ z
   xx' : pred w x ≐ pred v x'
   xx' = snd (snd (≐ext p (pred w x)) (x , ≐refl (pred w x)))
 
-  sep-in-v : ∃𝕧∈ v λ b → (z : 𝕍) → z ∈ b ↔ (z ∈ (pred v x') × F z)
+  sep-in-v : ∃𝕧∈ v λ b → ∀𝕧∈ v λ z → z ∈ b ↔ (z ∈ (pred v x') × F z)
   sep-in-v = e F F-inv x'
 
   In-w : pred v (fst sep-in-v) ∈ w
@@ -363,14 +525,117 @@ inv-Sep {v}{w} p e F F-inv x = fst In-w , λ z → lem₁ z , lem₂ z
   inw≐inv : pred w (fst In-w) ≐ pred v (fst sep-in-v)
   inw≐inv = ≐sym (pred v (fst sep-in-v)) (pred w (fst In-w)) (snd In-w)
 
-  lem₁ : (z : 𝕍) → (z ∈ pred w (fst In-w)) → (z ∈ (pred w x) × F z)
-  lem₁ z (u , d) = snd (≐ext xx' z) (fst sublem₁) , snd sublem₁
+  lem₁ : ∀𝕧∈ w λ z → (z ∈ pred w (fst In-w)) → (z ∈ (pred w x) × F z)
+  lem₁ z (u , d) = fst (≐ext (≐sym (pred w x) (pred v x') xx') (pred w z)) sublem₂ ,
+                   sublem₃
     where
-    sublem₁ : z ∈ (pred v x') × F z
-    sublem₁ = fst (snd sep-in-v z) (fst (≐ext inw≐inv z) (u , d))
+    z' : index v
+    z' = fst (snd (≐ext p (pred w z)) (z , ≐refl (pred w z)))
 
-  lem₂ : (z : 𝕍) → (z ∈ (pred w x) × F z) → (z ∈ pred w (fst In-w))
-  lem₂ z (d₁ , d₂) = snd (≐ext inw≐inv z) (snd (snd sep-in-v z) (fst (≐ext xx' z) d₁ , d₂))
+    zz' : pred w z ≐ pred v z'
+    zz' = snd (snd (≐ext p (pred w z)) (z , ≐refl (pred w z)))
+
+    sublem₁ : pred v z' ∈ pred v (fst sep-in-v)
+    sublem₁ = fst (fst (≐bisim inw≐inv) u) ,
+              ≐trans (pred v z') (pred w z)
+                     (pred (pred v (fst sep-in-v)) (fst (fst (≐bisim inw≐inv) u)))
+                     (≐sym (pred w z) (pred v z') zz')
+                     (≐trans (pred w z) (pred (pred w (fst In-w)) u)
+                             (pred (pred v (fst sep-in-v)) (fst (fst (≐bisim inw≐inv) u)))
+                             d
+                             (snd (fst (≐bisim inw≐inv) u)))
+
+    sublem₂ : pred w z ∈ pred v x'
+    sublem₂ = ≐transp {x = pred v x'} (≐sym (pred w z) (pred v z') zz')
+                                      (fst (fst (snd sep-in-v z') sublem₁))
+
+    sublem₃ : F (pred w z)
+    sublem₃ = F-inv (≐sym (pred w z) (pred v z') zz')
+                    (snd (fst (snd sep-in-v z') sublem₁))
+
+  lem₂ : ∀𝕧∈ w λ z → (z ∈ (pred w x) × F z) → (z ∈ pred w (fst In-w))
+  lem₂ z (d₁ , d₂) = snd (≐ext inw≐inv (pred w z)) sublem
+    where
+    z' : index v
+    z' = fst (snd (≐ext p (pred w z)) (z , ≐refl (pred w z)))
+
+    zz' : pred w z ≐ pred v z'
+    zz' = snd (snd (≐ext p (pred w z)) (z , ≐refl (pred w z)))
+
+    sublem : pred w z ∈ pred v (fst sep-in-v)
+    sublem = ≐transp {x = pred v (fst sep-in-v)} (≐sym (pred w z) (pred v z') zz')
+                     (snd (snd sep-in-v z') (≐transp {x = pred v x'} zz'
+                                                     (fst (≐ext xx' (pred w z)) d₁) ,
+                                             F-inv zz' d₂ ))
+
+
+-- the domain and range of binary relation
+
+domAx : (R : 𝕍) → Σ 𝕍 λ a → (x : 𝕍) → (x ∈ a ↔ Σ 𝕍 λ b → ⟨ x , b ⟩ ∈ R)
+domAx R = let invDom : (R : 𝕍) → isInv λ a → ∃𝕧∈ (∪ (∪ R)) (λ b → ⟨ a , b ⟩ ∈ R)
+              invDom R p x = fst x , ≐transp {x = R} (lemOPairAx₇ (p , ≐refl (pred (∪ (∪ R)) (fst x)))) (snd x)
+
+              domSet : Σ 𝕍 (λ b → (x : 𝕍) →
+                         (x ∈ b) ↔ (x ∈ ∪ (∪ R) × ∃𝕧∈ (∪ (∪ R)) (λ b₁ → ⟨ x , b₁ ⟩ ∈ R)))
+              domSet = SepAx' (λ a → ∃𝕧∈ (∪ (∪ R)) (λ b → ⟨ a , b ⟩ ∈ R)) (invDom R) (∪ (∪ R))
+          in fst domSet ,
+             λ x → (λ c → pred (∪ (∪ R)) (fst (snd (fst (snd domSet x) c))) ,
+                          snd (snd (fst (snd domSet x) c))) ,
+                    λ d → snd (snd domSet x) (proj∪₁ {R = R} (snd d) ,
+                            fst (proj∪₂ {R = R} (snd d)) ,
+                            ≐transp {x = R} (lemOPairAx₇ (≐refl x , snd (proj∪₂ {R = R} (snd d)))) (snd d))
+
+dom : 𝕍 → 𝕍
+dom = fst (AC domAx)
+
+dom-proof : (R x : 𝕍) → (x ∈ dom R ↔ Σ 𝕍 λ b → ⟨ x , b ⟩ ∈ R)
+dom-proof = snd (AC domAx)
+
+ranAx : (R : 𝕍) → Σ 𝕍 λ a → (x : 𝕍) → (x ∈ a ↔ Σ 𝕍 λ b → ⟨ b , x ⟩ ∈ R)
+ranAx R = let invRan : (R : 𝕍) → isInv λ a → ∃𝕧∈ (∪ (∪ R)) (λ b → ⟨ b , a ⟩ ∈ R)
+              invRan R p x = fst x , ≐transp {x = R} (lemOPairAx₇ (≐refl (pred (∪ (∪ R)) (fst x)) , p)) (snd x)
+
+              ranSet : Σ 𝕍 (λ b → (x : 𝕍) →
+                         (x ∈ b) ↔ (x ∈ ∪ (∪ R) × ∃𝕧∈ (∪ (∪ R)) (λ b₁ → ⟨ b₁ , x ⟩ ∈ R)))
+              ranSet = SepAx' (λ a → ∃𝕧∈ (∪ (∪ R)) (λ b → ⟨ b , a ⟩ ∈ R)) (invRan R) (∪ (∪ R))
+          in fst ranSet ,
+             λ x → (λ c → pred (∪ (∪ R)) (fst (snd (fst (snd ranSet x) c))) ,
+                          snd (snd (fst (snd ranSet x) c))) ,
+                    λ d → snd (snd ranSet x) (proj∪₂ {R = R} (snd d) ,
+                            fst (proj∪₁ {R = R} (snd d)) ,
+                            ≐transp {x = R} (lemOPairAx₇ (snd (proj∪₁ {R = R} (snd d)) , ≐refl x)) (snd d))
+
+ran : 𝕍 → 𝕍
+ran = fst (AC ranAx)
+
+ran-proof : (R x : 𝕍) → (x ∈ ran R ↔ Σ 𝕍 λ b → ⟨ b , x ⟩ ∈ R)
+ran-proof = snd (AC ranAx)
+
+-- function application: note that _[_] is defined for an arbitrary set f : 𝕍
+
+funAppAx : (f x : 𝕍) → Σ 𝕍 λ c → (a : 𝕍) → (a ∈ c ↔ Σ 𝕍 (λ b → ⟨ x , b ⟩ ∈ f × a ∈ b))
+funAppAx f x = let F : 𝕍 → Set
+                   F = λ y → ∃𝕧∈ (ran f) (λ b → ⟨ x , b ⟩ ∈ f × y ∈ b)
+
+                   invApp : isInv F
+                   invApp p c = fst c , fst (snd c) , ≐transp {x = pred (ran f) (fst c)} p (snd (snd c))
+               in fst (SepAx' F invApp (∪ (ran f))) ,
+                  λ a → (λ c → pred (ran f) (fst (snd (fst (snd (SepAx' F invApp (∪ (ran f))) a) c))) ,
+                               snd (snd (fst (snd (SepAx' F invApp (∪ (ran f))) a) c))) ,
+                        λ d → snd (snd (SepAx' F invApp (∪ (ran f))) a)
+                                (snd (∪-proof (ran f) a)
+                                  (fst (snd (ran-proof f (fst d)) (x , fst (snd d))) ,
+                                   fst (≐ext (snd (snd (ran-proof f (fst d)) (x , fst (snd d)))) a) (snd (snd d))) ,
+                                fst (snd (ran-proof f (fst d)) (x , fst (snd d))) ,
+                                ≐transp {x = f}
+                                  (lemOPairAx₇ (≐refl x , snd (snd (ran-proof f (fst d)) (x , fst (snd d))))) (fst (snd d)) ,
+                                  fst (≐ext (snd (snd (ran-proof f (fst d)) (x , fst (snd d)))) a) (snd (snd d)))
+
+_[_] : 𝕍 → 𝕍 → 𝕍
+f [ x ] = fst (AC (funAppAx f)) x
+
+funApp-proof : (f x a : 𝕍) → (a ∈ (f [ x ]) ↔ Σ 𝕍 (λ b → ⟨ x , b ⟩ ∈ f × a ∈ b))
+funApp-proof f x a = snd (AC (funAppAx f)) x a
 
 
 -- Collection Axioms
@@ -390,8 +655,9 @@ StrColl {a = a} c = sup (index a) (λ x → fst (c x)) ,
   (λ x → x , snd (c x)) , λ x → x , snd (c x)
 
 _⊧StrColl : 𝕍 → Set₁
-c ⊧StrColl = {F : 𝕍 → 𝕍 → Set} → ∀𝕧∈ c (λ a → (∀𝕧∈ a λ v → ∃𝕧∈ c λ w → F v w) →
-  ∃𝕧∈ c λ b → (∀𝕧∈ a λ v → ∃𝕧∈ b λ w → F v w) × (∀𝕧∈ b λ w → ∃𝕧∈ a λ v → F v w))
+c ⊧StrColl = {F : 𝕍 → 𝕍 → Set} → ((w : 𝕍) → isInv (λ v → F v w)) → ((v : 𝕍) → isInv (λ w → F v w)) →
+  ∀𝕧∈ c (λ a → (∀𝕧∈ a λ v → ∃𝕧∈ c λ w → F v w) →
+    ∃𝕧∈ c λ b → (∀𝕧∈ a λ v → ∃𝕧∈ b λ w → F v w) × (∀𝕧∈ b λ w → ∃𝕧∈ a λ v → F v w))
 
 -- Subset Collection
 
@@ -402,9 +668,10 @@ SubColl {F = F} a b = sup (index a → index b) (λ f → sup (index a) λ x →
   λ u e → (λ x → fst (e x)) , (λ x → x , snd (e x)) , (λ x → x , snd (e x))
 
 _⊧SubColl : 𝕍 → Set₁
-z ⊧SubColl = {F : (v w u : 𝕍) → Set} → ∀𝕧∈ z λ a → ∀𝕧∈ z λ b → ∃𝕧∈ z λ c →
-  ∀𝕧∈ z λ u → ∀𝕧∈ a (λ v → ∃𝕧∈ b (λ w → F v w u)) →
-    ∃𝕧∈ c λ d → ∀𝕧∈ a (λ v → ∃𝕧∈ d (λ w → F v w u)) × ∀𝕧∈ d (λ w → ∃𝕧∈ a (λ v → F v w u))
+z ⊧SubColl = {F : (v w u : 𝕍) → Set} → ((w u : 𝕍) → isInv λ v → F v w u) → ((v u : 𝕍) → isInv λ w → F v w u) →
+  ∀𝕧∈ z λ a → ∀𝕧∈ z λ b → ∃𝕧∈ z λ c →
+    ∀𝕧∈ z λ u → ∀𝕧∈ a (λ v → ∃𝕧∈ b (λ w → F v w u)) →
+      ∃𝕧∈ c λ d → ∀𝕧∈ a (λ v → ∃𝕧∈ d (λ w → F v w u)) × ∀𝕧∈ d (λ w → ∃𝕧∈ a (λ v → F v w u))
 
 
 -- multi-valued functions
@@ -567,13 +834,13 @@ Exp a b = fst Exp-lem₂ , λ f →
     v₁v₃≐x d = ≐trans ⟨ v₁ d , v₃ d ⟩ ⟨ v₁ d , v₂ d ⟩ x (v₃≐v₂ d) (≐sym x ⟨ v₁ d , v₂ d ⟩ (x≐v₁v₂ d))
 
 
--- Infinity Axiom and some notions and lemmas concerning the axiom
+-- Infinity Axiom with some notions and lemmas concerning the axiom
 
 ∅ : 𝕍
 ∅ = sup ⊥ (⊥elim λ _ → 𝕍)
 
 suc𝕍 : 𝕍 → 𝕍
-suc𝕍 a = sup (index a ⊕ ⊤) λ x → ⊕elim' (λ _ → 𝕍) (λ y → pred a y) (λ z → a) x
+suc𝕍 a = sup (index a ⊕ ⊤) λ x → ⊕elim (λ _ → 𝕍) (λ y → pred a y) (λ z → a) x
 
 ∅-is-empty : (a : 𝕍) → a ∈ ∅ ↔ ⊥
 ∅-is-empty a = (λ c → fst c) , λ x → ⊥elim (λ _ → a ∈ ∅) x
@@ -674,23 +941,49 @@ tc-tc' : (a : 𝕍) → {b : 𝕍} → b ∈ (tc a) → (tc b) ⊆' (tc a)
 tc-tc' a {b} d c e = ≐transp {pred (tc b) (fst e)} {c} {tc a}
   (≐sym c (pred (tc b) (fst e)) (snd e)) (tc-tc a {b} d (fst e))
 
+tc-cong : {a b : 𝕍} → a ≐ b → (c : 𝕍) → c ∈ tc a → c ∈ tc b
+tc-cong {sup A f} {sup B g} p c (injl x , q) =
+  injl (fst (fst p x)) , ≐trans c (f x) (g (fst (fst p x))) q (snd (fst p x))
+tc-cong {sup A f} {sup B g} p c (injr x , q) =
+  injr (fst (fst p (fst x)) , fst lem) , snd lem
+  where
+  lem : c ∈ tc (g (fst (fst p (fst x))))
+  lem = tc-cong (snd (fst p (fst x))) c (snd x , q)
+
+tc-cong' : {a b : 𝕍} → a ≐ b → tc a ≐ tc b
+tc-cong' {sup a f}{sup b g} p = lem₁ , lem₂
+  where
+  lem₁ : (x : index (tc (sup a f))) → Σ (index (tc (sup b g))) λ y → pred (tc (sup a f)) x ≐ pred (tc (sup b g)) y
+  lem₁ (injl z) = injl (fst (fst p z)) , snd (fst p z)
+  lem₁ (injr w) = injr (fst (fst p (fst w)) ,
+                          fst ((fst (fst ≐logeq (tc-cong' {f (fst w)}{g (fst (fst p (fst w)))} (snd (fst p (fst w)))))) (snd w))) ,
+                  snd ((fst (fst ≐logeq (tc-cong' {f (fst w)}{g (fst (fst p (fst w)))} (snd (fst p (fst w)))))) (snd w))
+
+  lem₂ : (y : index (tc (sup b g))) → Σ (index (tc (sup a f))) λ x → pred (tc (sup a f)) x ≐ pred (tc (sup b g)) y
+  lem₂ (injl z) = injl (fst (snd p z)) , snd (snd p z)
+  lem₂ (injr w) = injr (fst (snd p (fst w)) ,
+                          fst ((snd (fst ≐logeq (tc-cong' {f (fst (snd p (fst w)))}{g (fst w)} (snd (snd p (fst w)))))) (snd w))) ,
+                  snd ((snd (fst ≐logeq (tc-cong' {f (fst (snd p (fst w)))}{g (fst w)} (snd (snd p (fst w)))))) (snd w))
+
+
 -- the transfinite induction principles for transitive closures of sets
 
-∈-tcTI : {ℓ : Level} {F : 𝕍 → Set ℓ} →
-          ((a : 𝕍) → (∀𝕧∈ (tc a) λ v → F v) → F a) → (a : 𝕍) → F a
-∈-tcTI {ℓ}{F} e (sup A f) = e (sup A f) ∈-tcTI-lem
-  where
-  F' : 𝕍 → Set ℓ
-  F' a = ∀𝕧∈ (tc a) λ v → F v
+interleaved mutual
 
-  ∈-tcTI-lem : (x : A ⊕ Σ A (λ y → index (tc (f y)))) → F (pred (tc (sup A f)) x)
-  ∈-tcTI-lem (injl x) = ∈-tcTI e (f x)
-  ∈-tcTI-lem (injr (y , c)) = ∈-tcTI {F = F'}
-    (λ a d z → e (pred (tc a) z) (d z)) (f y) c
+  ∈-tcTI : {ℓ : Level} {F : 𝕍 → Set ℓ} →
+            ((a : 𝕍) → (∀𝕧∈ (tc a) λ v → F v) → F a) → (a : 𝕍) → F a
+
+  ∈-tcTI-IH : {ℓ : Level} {F : 𝕍 → Set ℓ} →
+                ((a : 𝕍) → (∀𝕧∈ (tc a) λ v → F v) → F a) →
+                  (a : 𝕍) → ∀𝕧∈ (tc a) λ v → F v
+
+  ∈-tcTI {ℓ} {F} e (sup A f) = e (sup A f) (∈-tcTI-IH {ℓ} {F} e (sup A f))
+  ∈-tcTI-IH {ℓ} {F} e (sup A f) (injl x) = ∈-tcTI e (f x)
+  ∈-tcTI-IH {ℓ} {F} e (sup A f) (injr (y , c)) =
+    ∈-tcTI {F = λ a → ∀𝕧∈ (tc a) λ v → F v} (λ a d z → e (pred (tc a) z) (d z)) (f y) c
 
 
 -- the notion of CZF model
 
 _⊧CZF : 𝕍 → Set₁
-a ⊧CZF = a ⊧SetInd × (a ⊧Pairs) × (a ⊧Union) × (a ⊧Sep) ×
-  (a ⊧StrColl) × (a ⊧SubColl) × (a ⊧Infty)
+a ⊧CZF = (a ⊧SetInd) × (a ⊧Pairs) × (a ⊧Union) × (a ⊧Sep) × (a ⊧StrColl) × (a ⊧SubColl) × (a ⊧Infty)
