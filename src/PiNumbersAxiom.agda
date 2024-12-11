@@ -261,7 +261,9 @@ V-base {b} b-trans a t =
                              (sup (index (ξ d)) λ y → h[ a , t , b ] (fst (lem₁ d IH) y))
                              (≡-≐ (λ z → h[ a , t , b ] (fst (lem₁ d IH) z)) (snd (lem₂ d)))
 
-  
+
+-- Pi-Numbers Axiom is validated in MLTT with one Mahlo universe and the accessibility predicate
+
 PiNumbersAx : (x a : 𝕍) → Σ Set λ U → Σ (U → Set) λ T → Σ 𝕍 λ b →
                 x ∈ b × [ U , T , b ]-is a Inacc
 PiNumbersAx x a = Û[ a , 𝕍⊆Acc a , tc x' ] , T̂[ a , 𝕍⊆Acc a , tc x' ] , V[ a , 𝕍⊆Acc a , tc x' ] ,

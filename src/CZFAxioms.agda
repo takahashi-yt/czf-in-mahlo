@@ -26,7 +26,7 @@ open import CZFBasics
        In R. B. Marcus, G. J. Dorn, and G. J. W. Dorn, editors, Logic, Methodology, and Philosophy of
        Science VII, pages 17--49. North-Holland, 1986.
 
-   The proofs for Fullness Axiom and Exponentiation Axiom below are the ones in:
+   Moreover, we prove Fullness Axiom and Exponentiation Axiom, following the proof in
 
    Michael Rathjen, Edward R. Griffor, and Erik Palmgren. Inaccessibility in constructive set theory
    and type theory. Ann. Pure Appl. Log., 94(1-3):181--200, 1998.
