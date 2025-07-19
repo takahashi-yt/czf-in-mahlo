@@ -34,3 +34,6 @@ A lemma on the hierarchy of inaccessible sets of transfinite orders is proved. F
 
 `PiNumbersAxiom.agda`:
 It is shown that inaccessible sets of all transfinite orders are interpretable in MLTT with one Mahlo universe and the accessibility predicate.
+
+`Extensional.agda`:
+This file is a digression. Postulating function extensionality, we prove the propositional computation rule of the transfinite induction principles for transitive closures of iterative sets. None of the results given by this file is used in the other files of the present repository.

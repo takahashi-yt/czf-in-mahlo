@@ -101,8 +101,11 @@ ip-compat {sup A f} {sup B g} p x = fst (fst p x) , snd (fst p x)
 
 -- "eta-equality" for _≐_
 
+≡𝕍eta : (a : 𝕍) → a ≡ sup (index a) (pred a)
+≡𝕍eta (sup A f) = refl
+
 ≐eta : (a : 𝕍) → a ≐ sup (index a) (pred a)
-≐eta (sup A f) = (λ x → x , ≐refl (f x)) , (λ x → x , ≐refl (f x))
+≐eta a = transp (λ x → a ≐ x) (≡𝕍eta a) (≐refl a) 
 
 ≐bisim : {v w : 𝕍} → v ≐ w →
             (∀𝕧∈ v λ x → ∃𝕧∈ w λ y → x ≐ y) × (∀𝕧∈ w λ y → ∃𝕧∈ v λ x → x ≐ y)
@@ -114,6 +117,10 @@ ip-compat {sup A f} {sup B g} p x = fst (fst p x) , snd (fst p x)
 ≡-≐ : {A B : Set} → (g : B → 𝕍) → (p : A ≡ B)
         → sup A (λ x → g (transp (λ X → X) p x)) ≐ sup B g
 ≡-≐ {A} {.A} g refl = ≐refl (sup A g)
+
+≡-≐' : {A B : Set} → (g : B → 𝕍) → (p : A ≡ B)
+         → sup A (λ x → g (transp (λ X → X) p x)) ≡ sup B g
+≡-≐' {A} {.A} g refl = refl
 
 -- a similar lemma not mentioning ≐
 

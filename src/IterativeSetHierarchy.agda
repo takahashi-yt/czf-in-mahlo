@@ -38,6 +38,19 @@ V-trans {a} {t} {c} v w d e  =
      snd (fst (≐ext Vtrans-lem w) e)
 
 
+-- V a t c is closed under singleton operation
+
+V-sglt : (x : 𝕍) → x ∈ V a t c → sglt x ∈ V a t c
+V-sglt {a} {prog f} {c} x x-in-V =
+  let x' : V̂ a (prog f) c
+      x' = fst x-in-V
+  in (sup code⊤ λ _ → x') , (λ _ → tt , snd x-in-V) , (λ _ → tt , snd x-in-V)
+
+V-sglt' : ∀𝕧∈ (V a t c) λ x → sglt x ∈ V a t c
+V-sglt' {a} {prog f} {c} i =
+  (sup code⊤ λ _ → i) , (λ _ → tt , ≐refl (h a (prog f) c i)) , λ _ → tt , ≐refl (h a (prog f) c i)
+  
+
 -- we show that V a t c validates all axioms of CZF
 
 -- V a t c validates Extensionality Axioms

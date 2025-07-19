@@ -165,7 +165,14 @@ h-iso⊕ {a} {t} {c} {x} {y} {v} {w} = ⊕elim (λ _ → (h a t c v ≐ h a t c 
                                      ⊕elim (λ _ → T̂ a t c (≐' a t c v x) ⊕ T̂ a t c (≐' a t c w y))
                                            (λ d₁ → injl (snd h-iso d₁))
                                            (λ d₂ → injr (snd h-iso d₂))
-                                            
+
+h-index : (v : V̂ a t c) → index (h a t c v) ≡ T̂ a t c (index v)
+h-index {a} {prog g} {c} (sup z f) = refl
+
+h-pred : (v : V̂ a t c) (i : index (h a t c v)) →
+           Σ (T̂ a t c (index v)) λ j → pred (h a t c v) i ≐ h a t c (pred v j)
+h-pred {a} {prog g} {c} (sup z f) i = i , ≐refl (h a (prog g) c (f i))
+
 
 -- V̂ a t c validates all axioms of CZF
 
@@ -260,6 +267,53 @@ UnionV̂ {a} {prog g} {c} (sup z f) = sup (codeΣ z λ i → index (f i)) (λ (i
                                           (fst (fst (≐'bisim {a} {prog g} {c} {y} (snd d)) (fst e))))
                                      (snd e)
                                      (snd (fst (≐'bisim {a} {prog g} {c} {y} (snd d)) (fst e))))
+
+-- the union operator on V̂ a t c
+
+∪V̂ : (a : 𝕍) (t : Acc a) (c : 𝔽 0) → V̂ a t c → V̂ a t c
+∪V̂ a t c = fst (AC (UnionV̂ {a} {t} {c}))
+
+∪V̂-proof : (v x : V̂ a t c) → T̂ a t c (∈' a t c x (∪V̂ a t c v)) ↔
+                             Σ (V̂ a t c) λ y → T̂ a t c (small× a t c (∈' a t c y v) (∈' a t c x y))
+∪V̂-proof {a} {t} {c} v = snd (AC (UnionV̂ {a} {t} {c})) v
+
+
+-- V̂ a t c validates Binary Union Axiom
+
+UnionBiV̂ : (v w : V̂ a t c) →
+             Σ (V̂ a t c) λ u → (x : V̂ a t c) →
+                                 T̂ a t c (∈' a t c x u) ↔ T̂ a t c (small⊕ a t c (∈' a t c x v) (∈' a t c x w))
+UnionBiV̂ {a} {prog g} {c} (sup z₁ f₁) (sup z₂ f₂) =
+  sup (codeS z₁ z₂) f ,
+  λ x → (λ (z , p) → unionBi-prf₁ x z p) ,
+        unionBi-prf₂ x
+    where
+    f : T̂ a (prog g) c (codeS z₁ z₂) → V̂ a (prog g) c
+    f (injl x₁) = f₁ x₁
+    f (injr x₂) = f₂ x₂
+
+    unionBi-prf₁ : (x : V̂ a (prog g) c) (y : T̂ a (prog g) c (codeS z₁ z₂)) →
+                     T̂ a (prog g) c (≐' a (prog g) c x (f y)) →
+                       T̂ a (prog g) c (small⊕ a (prog g) c (∈' a (prog g) c x (sup z₁ f₁))
+                                                           (∈' a (prog g) c x (sup z₂ f₂)))
+    unionBi-prf₁ x (injl x₁) p = injl (x₁ , p)
+    unionBi-prf₁ x (injr x₂) p = injr (x₂ , p)
+    
+    unionBi-prf₂ : (x : V̂ a (prog g) c) →
+                     T̂ a (prog g) c (small⊕ a (prog g) c (∈' a (prog g) c x (sup z₁ f₁))
+                                                         (∈' a (prog g) c x (sup z₂ f₂))) →
+                       T̂ a (prog g) c (∈' a (prog g) c x (sup (codeS z₁ z₂) f))
+    unionBi-prf₂ x (injl d₁) = injl (fst d₁) , snd d₁
+    unionBi-prf₂ x (injr d₂) = injr (fst d₂) , snd d₂
+
+-- the binary union operator on V̂ a t c
+
+∪bV̂ : (a : 𝕍) (t : Acc a) (c : 𝔽 0) → V̂ a t c → V̂ a t c → V̂ a t c
+∪bV̂ a t c v w = fst (AC (λ (v , w) → UnionBiV̂ {a} {t} {c} v w)) (v , w)
+
+∪bV̂-proof : (v w x : V̂ a t c) →
+              T̂ a t c (∈' a t c x (∪bV̂ a t c v w)) ↔ T̂ a t c (small⊕ a t c (∈' a t c x v) (∈' a t c x w))
+∪bV̂-proof {a} {t} {c} v w = snd (AC (λ (v , w) → UnionBiV̂ {a} {t} {c} v w)) (v , w)
 
 
 -- V̂ a t c validates Separation Axiom

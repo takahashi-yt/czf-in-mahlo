@@ -138,5 +138,123 @@ V-regular {a} {prog f} {c} = (V-inhabited , V-trans) ,
                                       (y , ≐'refl {a} {prog f} {c} (pred v y))))))))))
 
 
+-- the transitive closure on V̂ a t c
+
+tcV̂ : (a : 𝕍) (t : Acc a) (c : 𝔽 0) → V̂ a t c → V̂ a t c
+tcV̂ a t c (sup z f) = ∪bV̂ a t c (sup z f) (∪V̂ a t c (sup z (λ x → tcV̂ a t c (f x))))
+
+TcAxV̂ : (v x : V̂ a t c) → T̂ a t c (∈' a t c x (tcV̂ a t c v)) ↔
+                          T̂ a t c (small⊕ a t c (∈' a t c x v)
+                                                (∈' a t c x (∪V̂ a t c (sup (index v) λ y → tcV̂ a t c (pred v y)))))
+TcAxV̂ {a} {t} {c} (sup z f) x = ∪bV̂-proof {a} {t} {c} (sup z f) (∪V̂ a t c (sup z λ y → tcV̂ a t c (f y))) x
+
+
+-- V a t c validates Regular Extension Axiom
+
+-- we first show that V a t c is closed under the transitive closure
+
+-- h a t c is compatible with the singleton operator
+
+h-compatible-sglt : (v : V̂ a t c) → h a t c (sgltV̂ a t c v) ≐ sglt (h a t c v)
+h-compatible-sglt {a} {prog f} {c} v =
+  (λ _ → tt , ≐refl (h a (prog f) c v)) , λ _ → tt , ≐refl (h a (prog f) c v)
+
+-- h a t c is compatible with the binary union operator
+
+h-compatible-∪b : (v w : V̂ a t c) → h a t c (∪bV̂ a t c v w) ≐ (h a t c v) ∪b (h a t c w)
+h-compatible-∪b {a} {prog g} {c} (sup x₁ f₁) (sup x₂ f₂) =
+  ExtAx2' λ x → →proof x  ,
+                ←proof x
+  where
+  →proof : (x : 𝕍) → x ∈ h a (prog g) c (∪bV̂ a (prog g) c (sup x₁ f₁) (sup x₂ f₂)) →
+                       x ∈ ((h a (prog g) c (sup x₁ f₁)) ∪b (h a (prog g) c (sup x₂ f₂)))
+  →proof x (injl y₁ , p) = snd (∪b-proof (h a (prog g) c (sup x₁ f₁)) (h a (prog g) c (sup x₂ f₂)) x)
+                             (injl (y₁ , p))
+  →proof x (injr y₂ , p) = snd (∪b-proof (h a (prog g) c (sup x₁ f₁)) (h a (prog g) c (sup x₂ f₂)) x)
+                             (injr (y₂ , p))
+
+  ←proof : (x : 𝕍) → x ∈ ((h a (prog g) c (sup x₁ f₁)) ∪b (h a (prog g) c (sup x₂ f₂))) →
+                       x ∈ h a (prog g) c (∪bV̂ a (prog g) c (sup x₁ f₁) (sup x₂ f₂))
+  ←proof x (injl y₁ , p) = injl y₁ , p
+  ←proof x (injr y₂ , p) = injr y₂ , p
+
+-- h a t c is compatible with the union operator
+
+h-compatible-∪ : (v : V̂ a t c) → h a t c (∪V̂ a t c v) ≐ ∪ (h a t c v)
+h-compatible-∪ {a} {prog g} {c} (sup z f) =
+  ExtAx2' λ x → (λ d → let p : h a (prog g) c (pred (f (fst (fst d))) (snd (fst d))) ≐ x
+                           p = ≐sym x (h a (prog g) c (pred (f (fst (fst d))) (snd (fst d)))) (snd d)
+
+                           lem : h a (prog g) c (pred (f (fst (fst d))) (snd (fst d))) ∈
+                                   h a (prog g) c (f (fst (fst d)))
+                           lem = fst (h∈-iso {a} {prog g} {c}
+                                             {pred (f (fst (fst d))) (snd (fst d))} {f (fst (fst d))})
+                                       (snd (fst d) ,
+                                        ≐'refl {a} {prog g} {c} (pred (f (fst (fst d))) (snd (fst d))))
+                       in snd (∪-proof (h a (prog g) c (sup z f)) x)
+                                (fst (fst d) ,
+                                 ExtAx1 {h a (prog g) c (pred (f (fst (fst d))) (snd (fst d)))}
+                                        {x}
+                                        {h a (prog g) c (f (fst (fst d)))}
+                                        p
+                                        lem)) ,
+                (λ e → let lem : Σ (T̂ a (prog g) c (index (f (fst (fst e))))) λ j →
+                                   pred (h a (prog g) c (f (fst (fst e)))) (snd (fst e)) ≐
+                                   h a (prog g) c (pred (f (fst (fst e))) j)
+                           lem = h-pred (f (fst (fst e))) (snd (fst e))
+                       in (fst (fst e) , fst lem) ,
+                           ≐trans x
+                                  (pred (h a (prog g) c (f (fst (fst e)))) (snd (fst e)))
+                                  (h a (prog g) c (pred (f (fst (fst e))) (fst lem)))
+                                  (snd e)
+                                  (snd lem))
+
+-- h a t c is compatible with the transitive closure
+
+h-compatible-tc : (v : V̂ a t c) → h a t c (tcV̂ a t c v) ≐ tc (h a t c v)
+h-compatible-tc {a} {prog g} {c} (sup z f) =
+  ≐trans (h a t' c (tcV̂ a t' c v))
+          ((h a t' c v) ∪b (h a t' c (∪V̂ a t' c (sup z λ y → tcV̂ a t' c (f y)))))
+          (tc (h a t' c v))
+          eq₁
+          (≐trans ((h a t' c v) ∪b (h a t' c (∪V̂ a t' c (sup z λ y → tcV̂ a t' c (f y)))))
+                  ((h a t' c v) ∪b (∪ (h a t' c (sup z λ y → tcV̂ a t' c (f y)))))
+                  (tc (h a t' c v))
+                  eq₂
+                  eq₃)
+  where
+  t' : Acc a
+  t' = prog g
+
+  v : V̂ a t' c
+  v = sup z f
+  
+  eq₁ : h a t' c (tcV̂ a t' c v) ≐
+        (h a t' c v) ∪b (h a t' c (∪V̂ a t' c (sup z λ y → tcV̂ a t' c (f y))))
+  eq₁ = h-compatible-∪b v (∪V̂ a t' c (sup z λ y → tcV̂ a t' c (f y)))
+
+  eq₂ : (h a t' c v) ∪b (h a t' c (∪V̂ a t' c (sup z λ y → tcV̂ a t' c (f y)))) ≐
+        (h a t' c v) ∪b (∪ (h a t' c (sup z λ y → tcV̂ a t' c (f y))))
+  eq₂ = ∪b-cong (≐refl (h a t' c v)) (h-compatible-∪ (sup z λ y → tcV̂ a t' c (f y)))
+
+  eq₃ : (h a t' c v) ∪b (∪ (sup (T̂ a t' c z) λ y → h a t' c (tcV̂ a t' c (f y)))) ≐
+        (h a t' c v) ∪b (∪ (sup (T̂ a t' c z) λ y → tc (h a t' c (f y))))  -- equals to tc (h a t' c v) definitionally
+  eq₃ = ∪b-cong (≐refl (h a t' c v))
+                 (∪-cong (≐cong {T̂ a t' c z}
+                                {λ y → h a t' c (tcV̂ a t' c (f y))}
+                                {λ y → tc (h a t' c (f y))}
+                                λ y → h-compatible-tc (f y)))
+
+-- V a t c is closed under the transitive closure
+
+V-tc : ∀𝕧∈ (V a t c) λ v → tc v ∈ V a t c
+V-tc {a} {prog f} {c} i = ExtAx1 {h a (prog f) c (tcV̂ a (prog f) c i)}
+                                  {tc (h a (prog f) c i)}
+                                  {V a (prog f) c}
+                                  (h-compatible-tc i)
+                                  (tcV̂ a (prog f) c i , ≐refl (h a (prog f) c (tcV̂ a (prog f) c i)))
+
+-- V a t c validates Regular Extension Axiom
+
 postulate
   V-REA : V a t c ⊧REA

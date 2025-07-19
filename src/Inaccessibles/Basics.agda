@@ -217,5 +217,17 @@ inaccHierarchy→ U T a (sup B g) a-inacc a-b-inacc j i =
 
 postulate
   Inacc-inv : (U : Set) (T : U → Set) → isInv λ a → [ U , T , a ]-isInacc
-  αInacc-inv : (U : Set) (T : U → Set) (b : 𝕍) → isInv λ a → [ U , T , a ]-is b Inacc
+
+
+αInacc-inv : (U : Set) (T : U → Set) (b : 𝕍) → isInv λ a → [ U , T , a ]-is b Inacc
+αInacc-inv U T b {a} {a'} p (a-inacc , (famSets , (famSets-cong , hyp ))) =
+  Inacc-inv U T p a-inacc ,
+  famSets ,
+    famSets-cong ,
+    λ i → (unbounded-inv' (famSets i) p (fst (fst (hyp i))) ,
+           snd (fst (hyp i))) ,
+           snd (hyp i) 
+
+
+postulate
   αInacc-inv' : (U : Set) (T : U → Set) (a : 𝕍) → isInv λ b → [ U , T , a ]-is b Inacc

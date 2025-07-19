@@ -75,7 +75,18 @@ apd f refl = refl
   where
   ≡trans-lem : (x y : A) → x ≡ y → (z : A) → y ≡ z → x ≡ z
   ≡trans-lem x .x refl = λ z r → r
-  
+
+
+-- cancellation of transport
+
+transpCancel1 : {a b : Level} {A : Set a} {P : A → Set b} {x y : A} →
+                  (p : x ≡ y) (c : P x) → transp P (≡sym p) (transp P p c) ≡ c
+transpCancel1 refl c = refl
+
+transpCancel2 : {a b : Level} {A : Set a} {P : A → Set b} {x y : A} →
+                  (p : x ≡ y) (d : P y) → transp P p (transp P (≡sym p) d) ≡ d
+transpCancel2 refl d = refl
+
 
 -- the eliminator for Nat
 
