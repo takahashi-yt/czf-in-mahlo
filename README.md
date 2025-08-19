@@ -1,5 +1,7 @@
 # CZF-in-Mahlo
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.16901729.svg)](https://doi.org/10.5281/zenodo.16901729)
+
 This repository contains the Agda code for [the following paper](https://doi.org/10.48550/arXiv.2402.15074):
 
 Yuta Takahashi. Interpretation of Inaccessible Sets in Martin-Löf Type Theory with One Mahlo Universe. Preprint. CoRR abs/2402.15074 (2024)
